@@ -1,8 +1,7 @@
-const {
-    EmbedBuilder
-} = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 const channels = require('../config/channels');
+const assets = require('../config/assets');
 
 module.exports = (client) => {
 
@@ -10,57 +9,80 @@ module.exports = (client) => {
 
         try {
 
+            // ============================================
+            // BEGRÜSSUNGS-CHANNEL
+            // ============================================
+
             const channel = member.guild.channels.cache.get(
                 channels.BEGRUESSUNG
             );
 
             if (!channel) {
-                console.log('❌ Begrüßung-Channel nicht gefunden.');
+                console.error(
+                    '❌ Begrüßungs-Channel wurde nicht gefunden!'
+                );
                 return;
             }
+
+            // ============================================
+            // USER AVATAR
+            // ============================================
+
+            const userAvatar = member.user.displayAvatarURL({
+                extension: 'png',
+                size: 256
+            });
+
+            // ============================================
+            // BEGRÜSSUNGS-EMBED
+            // ============================================
 
             const embed = new EmbedBuilder()
 
                 // Oben links
                 .setAuthor({
                     name: 'Gaming Bunker',
-                    iconURL: member.guild.iconURL({
-                        extension: 'png',
-                        size: 128
-                    }) || undefined
+                    iconURL: assets.GAMINGBUNKER_LOGO
                 })
 
-                // User-Avatar oben rechts
-                .setThumbnail(
-                    member.user.displayAvatarURL({
-                        extension: 'png',
-                        size: 256
-                    })
-                )
+                // Oben rechts
+                .setThumbnail(userAvatar)
 
-                // Begrüßung
+                // Titel
                 .setTitle('Willkommen auf GamingBunker')
 
+                // Begrüßungstext
                 .setDescription(
-                    `Willkommen ${member} 👋\n\n` +
-                    `Schön, dass du den Weg zu uns gefunden hast! 💜\n` +
-                    `Mach es dir gemütlich, lern die Community kennen ` +
-                    `und hab viel Spaß bei GamingBunker! 🎮`
+                    `Hey ${member}, 👋\n\n` +
+                    `schön, dass du den Weg zu **GamingBunker** gefunden hast! 💜\n\n` +
+                    `Mach es dir gemütlich, lern unsere Community kennen ` +
+                    `und hab viel Spaß bei uns! 🎮`
                 )
 
                 // GamingBunker-Farbe
                 .setColor(0x6F42C1)
 
+                // Banner
+                .setImage(assets.GAMINGBUNKER_BANNER)
+
                 // Footer
                 .setFooter({
-                    text: 'Hostet by 𝓘𝓽𝓼  𝓢𝓽𝓪𝓷𝔃𝔂 ♕'
+                    text: 'Hostet by 𝓘𝓽𝓼 𝓢𝓽𝓪𝓷𝔃𝔂 ♕'
                 })
 
                 .setTimestamp();
 
+            // ============================================
+            // NACHRICHT SENDEN
+            // ============================================
+
             await channel.send({
                 embeds: [embed]
             });
+
+            // ============================================
+            // CONSOLE
+            // ============================================
 
             console.log(
                 `👋 ${member.user.tag} ist GamingBunker beigetreten.`
