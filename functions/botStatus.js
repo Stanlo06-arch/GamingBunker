@@ -1,12 +1,10 @@
-const {
-    EmbedBuilder
-} = require('discord.js');
-
+const { EmbedBuilder } = require('discord.js');
 const channels = require('../config/channels');
 
 let statusMessage = null;
 
-function formatUptime(seconds) {
+function formatUptime() {
+    let seconds = Math.floor(process.uptime());
 
     const days = Math.floor(seconds / 86400);
     seconds %= 86400;
@@ -37,22 +35,18 @@ async function updateBotStatus(client) {
         );
 
         if (!channel) {
-            console.error('❌ Logs-Channel nicht gefunden!');
+            console.error(
+                `❌ Logs-Channel ${channels.LOGS} nicht gefunden!`
+            );
             return;
         }
 
-        const ping = Math.round(client.ws.ping);
-
+        const ping = Math.max(0, Math.round(client.ws.ping));
         const serverCount = client.guilds.cache.size;
-
-        const uptime = formatUptime(
-            Math.floor(process.uptime())
-        );
+        const uptime = formatUptime();
 
         const embed = new EmbedBuilder()
-
             .setTitle('SERVER LOGS')
-
             .setDescription(
                 `**BOT STATUS**\n\n` +
                 `Ping: \`${ping}ms\`\n` +
@@ -60,19 +54,25 @@ async function updateBotStatus(client) {
                 `Uptime: \`${uptime}\`\n` +
                 `Status: 🟢 \`Online\``
             )
-
             .setColor(0x57F287)
-
             .setTimestamp();
 
-        // Bereits vorhandene Status-Nachricht bearbeiten
+        // Alte Nachricht aktualisieren
         if (statusMessage) {
 
-            await statusMessage.edit({
-                embeds: [embed]
-            });
+            try {
 
-            return;
+                await statusMessage.edit({
+                    embeds: [embed]
+                });
+
+                return;
+
+            } catch {
+
+                statusMessage = null;
+
+            }
         }
 
         // Neue Nachricht erstellen
@@ -80,12 +80,12 @@ async function updateBotStatus(client) {
             embeds: [embed]
         });
 
-        console.log('✅ Bot-Status-Panel erstellt.');
+        console.log('✅ SERVER LOGS Status-Panel gesendet.');
 
     } catch (error) {
 
         console.error(
-            '❌ Fehler beim Bot-Status-Panel:',
+            '❌ Fehler beim SERVER LOGS Panel:',
             error
         );
 
@@ -94,12 +94,16 @@ async function updateBotStatus(client) {
 
 module.exports = (client) => {
 
-    // Erste Aktualisierung
-    updateBotStatus(client);
+    client.once('ready', async () => {
 
-    // Alle 60 Sekunden aktualisieren
-    setInterval(() => {
-        updateBotStatus(client);
-    }, 60 * 1000);
+        console.log('📊 Bot-Status-System gestartet.');
+
+        await updateBotStatus(client);
+
+        setInterval(() => {
+            updateBotStatus(client);
+        }, 60 * 1000);
+
+    });
 
 };
