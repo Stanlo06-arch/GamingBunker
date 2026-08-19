@@ -1,5 +1,3 @@
-console.log('🔥🔥🔥 GAMINGBUNKER CODE WIRD AUSGEFÜHRT 🔥🔥🔥');
-
 require('dotenv').config();
 
 const {
@@ -14,23 +12,12 @@ const client = new Client({
     ]
 });
 
-console.log('✅ CLIENT WURDE ERSTELLT');
+// Events
+const ready = require('./events/ready');
+const guildMemberAdd = require('./events/guildMemberAdd');
 
-client.once('ready', (client) => {
+ready(client);
+guildMemberAdd(client);
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎮 GAMINGBUNKER BOT');
-    console.log(`✅ Eingeloggt als: ${client.user.tag}`);
-    console.log(`🆔 Bot-ID: ${client.user.id}`);
-    console.log('🚀 BOT IST ONLINE!');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-});
-
-client.login(process.env.TOKEN)
-    .then(() => {
-        console.log('🔑 LOGIN WURDE GESTARTET');
-    })
-    .catch((error) => {
-        console.error('❌ LOGIN FEHLER:', error);
-    });
+// Login
+client.login(process.env.TOKEN);
