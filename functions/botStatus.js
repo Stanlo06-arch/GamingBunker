@@ -6,11 +6,10 @@ const assets = require('../config/assets');
 let statusMessage = null;
 
 // ======================================================
-// UPTIME FORMATIEREN
+// UPTIME
 // ======================================================
 
 function formatUptime() {
-
     let seconds = Math.floor(process.uptime());
 
     const days = Math.floor(seconds / 86400);
@@ -24,17 +23,9 @@ function formatUptime() {
 
     const parts = [];
 
-    if (days > 0) {
-        parts.push(`${days}d`);
-    }
-
-    if (hours > 0) {
-        parts.push(`${hours}h`);
-    }
-
-    if (minutes > 0) {
-        parts.push(`${minutes}m`);
-    }
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
 
     parts.push(`${seconds}s`);
 
@@ -42,40 +33,33 @@ function formatUptime() {
 }
 
 // ======================================================
-// STATUS BESTIMMEN
+// STATUS
 // ======================================================
 
 function getStatus(ping) {
 
     if (ping < 150) {
-
         return {
             emoji: '🟢',
-            text: 'Online',
-            color: 0x57F287
+            text: 'Online'
         };
-
     }
 
     if (ping < 300) {
-
         return {
             emoji: '🟡',
-            text: 'Hohe Latenz',
-            color: 0xFEE75C
+            text: 'Hohe Latenz'
         };
-
     }
 
     return {
         emoji: '🔴',
-        text: 'Fehler',
-        color: 0xED4245
+        text: 'Fehler'
     };
 }
 
 // ======================================================
-// STATUS PANEL AKTUALISIEREN
+// PANEL AKTUALISIEREN
 // ======================================================
 
 async function updateBotStatus(client) {
@@ -87,68 +71,59 @@ async function updateBotStatus(client) {
         );
 
         if (!channel) {
-
-            console.error(
-                '❌ Logs-Channel wurde nicht gefunden!'
-            );
-
+            console.error('❌ Logs-Channel nicht gefunden!');
             return;
         }
-
-        // --------------------------------------------------
-        // PING
-        // --------------------------------------------------
 
         const ping = Math.max(
             0,
             Math.round(client.ws.ping)
         );
 
-        // --------------------------------------------------
-        // STATUS
-        // --------------------------------------------------
-
-        const status = getStatus(ping);
-
-        // --------------------------------------------------
-        // SERVER
-        // --------------------------------------------------
-
         const serverCount = client.guilds.cache.size;
-
-        // --------------------------------------------------
-        // UPTIME
-        // --------------------------------------------------
-
         const uptime = formatUptime();
-
-        // --------------------------------------------------
-        // EMBED
-        // --------------------------------------------------
+        const status = getStatus(ping);
 
         const embed = new EmbedBuilder()
 
-            // GamingBunker Logo + Name
+            // ==========================================
+            // OBEN LINKS
+            // ==========================================
+
             .setAuthor({
                 name: 'Gaming Bunker',
                 iconURL: assets.GAMINGBUNKER_LOGO
             })
 
-            // Titel
-            .setTitle('SERVER LOGS')
+            // ==========================================
+            // OBEN RECHTS - BOT LOGO
+            // ==========================================
 
-            // Status
-            .setDescription(
-                '🤖 **BOT STATUS**'
+            .setThumbnail(
+                assets.BOT_LOGO
             )
 
-            // Werte
+            // ==========================================
+            // TITEL
+            // ==========================================
+
+            .setTitle('SERVER LOGS')
+
+            // ==========================================
+            // EINMALIGER STATUS
+            // ==========================================
+
+            .addFields({
+                name: 'BOT STATUS',
+                value: `${status.emoji} \`${status.text}\``,
+                inline: false
+            })
+
+            // ==========================================
+            // INFORMATIONEN
+            // ==========================================
+
             .addFields(
-                {
-                    name: '🟢 Status',
-                    value: `${status.emoji} \`${status.text}\``,
-                    inline: true
-                },
                 {
                     name: '📡 Ping',
                     value: `\`${ping}ms\``,
@@ -162,25 +137,37 @@ async function updateBotStatus(client) {
                 {
                     name: '⏱️ Uptime',
                     value: `\`${uptime}\``,
-                    inline: false
+                    inline: true
                 }
             )
 
-            // Statusfarbe
-            .setColor(status.color)
+            // ==========================================
+            // IMMER GAMINGBUNKER BLAU/LILA
+            // ==========================================
 
-            // GamingBunker Banner
-            .setImage(assets.GAMINGBUNKER_BANNER)
+            .setColor(0x6F42C1)
 
-            // Footer
+            // ==========================================
+            // GAMINGBUNKER BANNER
+            // ==========================================
+
+            .setImage(
+                assets.GAMINGBUNKER_BANNER
+            )
+
+            // ==========================================
+            // FOOTER MIT BOT LOGO
+            // ==========================================
+
             .setFooter({
-                text: 'Hostet by 𝓘𝓽𝓼 𝓢𝓽𝓪𝓷𝔃𝔂 ♕'
+                text: 'Hostet by 𝓘𝓽𝓼 𝓢𝓽𝓪𝓷𝔃𝔂 ♕',
+                iconURL: assets.BOT_LOGO
             })
 
             .setTimestamp();
 
         // ==================================================
-        // VORHANDENE NACHRICHT AKTUALISIEREN
+        // VORHANDENE NACHRICHT
         // ==================================================
 
         if (statusMessage) {
@@ -198,11 +185,10 @@ async function updateBotStatus(client) {
                 statusMessage = null;
 
             }
-
         }
 
         // ==================================================
-        // BEIM BOT-NEUSTART ALTE NACHRICHT SUCHEN
+        // ALTE STATUS-NACHRICHT SUCHEN
         // ==================================================
 
         const messages = await channel.messages.fetch({
@@ -225,7 +211,7 @@ async function updateBotStatus(client) {
             });
 
             console.log(
-                '♻️ Vorhandenes SERVER LOGS Panel aktualisiert.'
+                '♻️ SERVER LOGS Panel aktualisiert.'
             );
 
             return;
@@ -265,14 +251,10 @@ module.exports = (client) => {
             '📊 SERVER LOGS Status-System gestartet.'
         );
 
-        // Sofort aktualisieren
         await updateBotStatus(client);
 
-        // Alle 60 Sekunden
         setInterval(() => {
-
             updateBotStatus(client);
-
         }, 60 * 1000);
 
     });
