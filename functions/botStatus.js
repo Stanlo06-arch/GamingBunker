@@ -59,7 +59,7 @@ function getStatus(ping) {
 }
 
 // ======================================================
-// PANEL AKTUALISIEREN
+// PANEL
 // ======================================================
 
 async function updateBotStatus(client) {
@@ -96,11 +96,11 @@ async function updateBotStatus(client) {
             })
 
             // ==========================================
-            // OBEN RECHTS - BOT LOGO
+            // OBEN RECHTS
             // ==========================================
 
             .setThumbnail(
-                assets.BOT_LOGO
+                assets.GAMINGBUNKER_LOGO
             )
 
             // ==========================================
@@ -110,7 +110,7 @@ async function updateBotStatus(client) {
             .setTitle('SERVER LOGS')
 
             // ==========================================
-            // EINMALIGER STATUS
+            // BOT STATUS - NUR EINMAL
             // ==========================================
 
             .addFields({
@@ -120,7 +120,7 @@ async function updateBotStatus(client) {
             })
 
             // ==========================================
-            // INFORMATIONEN
+            // INFOS
             // ==========================================
 
             .addFields(
@@ -142,13 +142,13 @@ async function updateBotStatus(client) {
             )
 
             // ==========================================
-            // IMMER GAMINGBUNKER BLAU/LILA
+            // GAMINGBUNKER BLAU/LILA
             // ==========================================
 
             .setColor(0x6F42C1)
 
             // ==========================================
-            // GAMINGBUNKER BANNER
+            // BANNER
             // ==========================================
 
             .setImage(
@@ -156,18 +156,18 @@ async function updateBotStatus(client) {
             )
 
             // ==========================================
-            // FOOTER MIT BOT LOGO
+            // FOOTER
             // ==========================================
 
             .setFooter({
                 text: 'Hostet by 𝓘𝓽𝓼 𝓢𝓽𝓪𝓷𝔃𝔂 ♕',
-                iconURL: assets.BOT_LOGO
+                iconURL: assets.GAMINGBUNKER_LOGO
             })
 
             .setTimestamp();
 
         // ==================================================
-        // VORHANDENE NACHRICHT
+        // VORHANDENE NACHRICHT AKTUALISIEREN
         // ==================================================
 
         if (statusMessage) {
