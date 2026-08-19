@@ -1,3 +1,5 @@
+console.log('🔥🔥🔥 GAMINGBUNKER CODE WIRD AUSGEFÜHRT 🔥🔥🔥');
+
 require('dotenv').config();
 
 const {
@@ -12,33 +14,23 @@ const client = new Client({
     ]
 });
 
-// ==================================================
-// BOT ONLINE
-// ==================================================
+console.log('✅ CLIENT WURDE ERSTELLT');
 
-client.once('ready', () => {
+client.once('ready', (client) => {
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎮 GAMINGBUNKER BOT');
     console.log(`✅ Eingeloggt als: ${client.user.tag}`);
     console.log(`🆔 Bot-ID: ${client.user.id}`);
-    console.log('🚀 Bot ist online!');
+    console.log('🚀 BOT IST ONLINE!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    client.user.setPresence({
-        activities: [
-            {
-                name: 'GamingBunker 🎮',
-                type: 3
-            }
-        ],
-        status: 'online'
-    });
 
 });
 
-// ==================================================
-// LOGIN
-// ==================================================
-
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN)
+    .then(() => {
+        console.log('🔑 LOGIN WURDE GESTARTET');
+    })
+    .catch((error) => {
+        console.error('❌ LOGIN FEHLER:', error);
+    });
