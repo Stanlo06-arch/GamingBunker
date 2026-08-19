@@ -12,13 +12,29 @@ const client = new Client({
     ]
 });
 
-// Events
+// ==========================================
+// EVENTS
+// ==========================================
+
 const ready = require('./events/ready');
 const guildMemberAdd = require('./events/guildMemberAdd');
+
+// ==========================================
+// FUNCTIONS
+// ==========================================
+
+const botStatus = require('./functions/botStatus');
+
+// ==========================================
+// START
+// ==========================================
 
 ready(client);
 guildMemberAdd(client);
 botStatus(client);
 
-// Login
+// ==========================================
+// LOGIN
+// ==========================================
+
 client.login(process.env.TOKEN);
