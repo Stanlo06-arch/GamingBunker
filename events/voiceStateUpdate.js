@@ -1,9 +1,9 @@
-const {
-    ChannelType,
-    PermissionsBitField
-} = require('discord.js');
+const { ChannelType } = require('discord.js');
 
 const channels = require('../config/channels');
+
+// Hier werden alle temporären Talk-Channels gespeichert
+const temporaryChannels = new Set();
 
 module.exports = (client) => {
 
@@ -12,44 +12,38 @@ module.exports = (client) => {
         try {
 
             // ==========================================
-            // TALK-TO-CREATE CHANNEL
-            // ==========================================
-
-            const CREATE_CHANNEL_ID = channels.TALK;
-
-            // ==========================================
-            // USER BETRITT "🔊・Talk"
+            // USER BETRITT 🔊・Talk
             // ==========================================
 
             if (
-                newState.channelId === CREATE_CHANNEL_ID &&
-                oldState.channelId !== CREATE_CHANNEL_ID
+                newState.channelId === channels.TALK &&
+                oldState.channelId !== channels.TALK
             ) {
 
                 const member = newState.member;
 
                 if (!member) return;
 
+                const createChannel = newState.channel;
+
+                if (!createChannel) return;
+
                 // ======================================
-                // TEMPORÄREN TALK ERSTELLEN
+                // TEMPORÄREN CHANNEL ERSTELLEN
                 // ======================================
 
                 const tempChannel = await newState.guild.channels.create({
-                    name: `🔊・${member.user.username}'s Talk`,
+                    name: `🔊・${member.user.username}`,
                     type: ChannelType.GuildVoice,
 
-                    parent: newState.channel?.parentId || null,
+                    // Genau dieselbe Kategorie wie 🔊・Talk
+                    parent: createChannel.parentId,
 
-                    permissionOverwrites: [
-                        {
-                            id: newState.guild.roles.everyone.id,
-                            allow: [
-                                PermissionsBitField.Flags.ViewChannel,
-                                PermissionsBitField.Flags.Connect
-                            ]
-                        }
-                    ]
+                    reason: `Talk-to-Create für ${member.user.tag}`
                 });
+
+                // Channel als temporär markieren
+                temporaryChannels.add(tempChannel.id);
 
                 // ======================================
                 // USER VERSCHIEBEN
@@ -58,36 +52,43 @@ module.exports = (client) => {
                 await member.voice.setChannel(tempChannel);
 
                 console.log(
-                    `🔊 Talk erstellt: ${tempChannel.name} für ${member.user.tag}`
+                    `🔊 Talk erstellt: ${tempChannel.name}`
                 );
 
                 return;
             }
 
             // ==========================================
-            // LEEREN TEMPORÄREN TALK LÖSCHEN
+            // TEMPORÄREN TALK LEER?
             // ==========================================
 
             if (
                 oldState.channel &&
-                oldState.channelId !== CREATE_CHANNEL_ID &&
-                oldState.channel.members.size === 0 &&
-                oldState.channel.name.startsWith('🔊・')
+                temporaryChannels.has(oldState.channelId)
             ) {
 
-                await oldState.channel.delete(
-                    'Temporärer Talk ist leer'
-                );
+                const oldChannel = oldState.channel;
 
-                console.log(
-                    `🗑️ Temporärer Talk gelöscht: ${oldState.channel.name}`
-                );
+                if (oldChannel.members.size === 0) {
+
+                    temporaryChannels.delete(
+                        oldChannel.id
+                    );
+
+                    await oldChannel.delete(
+                        'Temporärer Talk ist leer.'
+                    );
+
+                    console.log(
+                        `🗑️ Talk gelöscht: ${oldChannel.name}`
+                    );
+                }
             }
 
         } catch (error) {
 
             console.error(
-                '❌ Fehler beim Talk-to-Create-System:',
+                '❌ Fehler im Talk-to-Create-System:',
                 error
             );
 
