@@ -2,7 +2,7 @@ const { ChannelType } = require('discord.js');
 
 const channels = require('../config/channels');
 
-// Hier werden alle temporären Talk-Channels gespeichert
+// Temporäre Talk-Channels
 const temporaryChannels = new Set();
 
 module.exports = (client) => {
@@ -11,9 +11,9 @@ module.exports = (client) => {
 
         try {
 
-            // ==========================================
-            // USER BETRITT 🔊・Talk
-            // ==========================================
+            // ==================================================
+            // NEUEN TALK ERSTELLEN
+            // ==================================================
 
             if (
                 newState.channelId === channels.TALK &&
@@ -21,66 +21,51 @@ module.exports = (client) => {
             ) {
 
                 const member = newState.member;
-
-                if (!member) return;
-
                 const createChannel = newState.channel;
 
-                if (!createChannel) return;
-
-                // ======================================
-                // TEMPORÄREN CHANNEL ERSTELLEN
-                // ======================================
+                if (!member || !createChannel) return;
 
                 const tempChannel = await newState.guild.channels.create({
                     name: `🔊・${member.user.username}`,
                     type: ChannelType.GuildVoice,
-
-                    // Genau dieselbe Kategorie wie 🔊・Talk
                     parent: createChannel.parentId,
-
                     reason: `Talk-to-Create für ${member.user.tag}`
                 });
 
-                // Channel als temporär markieren
                 temporaryChannels.add(tempChannel.id);
-
-                // ======================================
-                // USER VERSCHIEBEN
-                // ======================================
 
                 await member.voice.setChannel(tempChannel);
 
                 console.log(
-                    `🔊 Talk erstellt: ${tempChannel.name}`
+                    `🔊 Talk erstellt: ${tempChannel.name} (${tempChannel.id})`
                 );
-
-                return;
             }
 
-            // ==========================================
-            // TEMPORÄREN TALK LEER?
-            // ==========================================
+            // ==================================================
+            // LEERE TEMPORÄRE CHANNELS PRÜFEN
+            // ==================================================
 
-            if (
-                oldState.channel &&
-                temporaryChannels.has(oldState.channelId)
-            ) {
+            for (const channelId of temporaryChannels) {
 
-                const oldChannel = oldState.channel;
+                const tempChannel =
+                    newState.guild.channels.cache.get(channelId);
 
-                if (oldChannel.members.size === 0) {
+                if (!tempChannel) {
+                    temporaryChannels.delete(channelId);
+                    continue;
+                }
 
-                    temporaryChannels.delete(
-                        oldChannel.id
-                    );
-
-                    await oldChannel.delete(
-                        'Temporärer Talk ist leer.'
-                    );
+                // Niemand mehr drin
+                if (tempChannel.members.size === 0) {
 
                     console.log(
-                        `🗑️ Talk gelöscht: ${oldChannel.name}`
+                        `🗑️ Leerer Talk wird gelöscht: ${tempChannel.name}`
+                    );
+
+                    temporaryChannels.delete(channelId);
+
+                    await tempChannel.delete(
+                        'Temporärer Talk ist leer.'
                     );
                 }
             }
