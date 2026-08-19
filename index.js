@@ -18,6 +18,7 @@ const client = new Client({
 
 const ready = require('./events/ready');
 const guildMemberAdd = require('./events/guildMemberAdd');
+const voiceStateUpdate = require('./events/voiceStateUpdate');
 
 // ==========================================
 // FUNCTIONS
@@ -31,6 +32,7 @@ const botStatus = require('./functions/botStatus');
 
 ready(client);
 guildMemberAdd(client);
+voiceStateUpdate(client);
 botStatus(client);
 
 // ==========================================
