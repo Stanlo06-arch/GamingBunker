@@ -27,6 +27,7 @@ const voiceStateUpdate = require('./events/voiceStateUpdate');
 
 const botStatus = require('./functions/botStatus');
 const bunkerPanel = require('./functions/bunkerPanel');
+const ticketSystem = require('./functions/ticketSystem');
 
 // ==================================================
 // START
@@ -38,6 +39,7 @@ voiceStateUpdate(client);
 
 botStatus(client);
 bunkerPanel(client);
+ticketSystem(client);
 
 // ==================================================
 // LOGIN
