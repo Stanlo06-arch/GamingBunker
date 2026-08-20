@@ -234,26 +234,29 @@ async function showUserSelector(
     const guild = interaction.guild;
 
     // Alle normalen User
-    const users = guild.members.cache
-        .filter(member => {
+   const members = await guild.members.fetch();
 
-            if (member.user.bot) {
-                return false;
-            }
+const users = members
+    .filter(member => {
 
-            if (member.id === ticket.userId) {
-                return false;
-            }
+        // Bots nicht anzeigen
+        if (member.user.bot) {
+            return false;
+        }
 
-            return true;
+        // Ticket-Ersteller nicht anzeigen
+        if (member.id === ticket.userId) {
+            return false;
+        }
 
-        })
-        .sort(
-            (a, b) =>
-                a.user.username.localeCompare(
-                    b.user.username
-                )
-        );
+        return true;
+    })
+    .sort(
+        (a, b) =>
+            a.user.username.localeCompare(
+                b.user.username
+            )
+    );
 
     const userArray = [...users.values()];
 
