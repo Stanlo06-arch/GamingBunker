@@ -5,10 +5,6 @@ const {
     GatewayIntentBits
 } = require('discord.js');
 
-// ==================================================
-// CLIENT
-// ==================================================
-
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -30,20 +26,18 @@ const voiceStateUpdate = require('./events/voiceStateUpdate');
 // ==================================================
 
 const botStatus = require('./functions/botStatus');
+const bunkerPanel = require('./functions/bunkerPanel');
 
 // ==================================================
-// EVENTS STARTEN
+// START
 // ==================================================
 
 ready(client);
 guildMemberAdd(client);
 voiceStateUpdate(client);
 
-// ==================================================
-// FUNCTIONS STARTEN
-// ==================================================
-
 botStatus(client);
+bunkerPanel(client);
 
 // ==================================================
 // LOGIN
