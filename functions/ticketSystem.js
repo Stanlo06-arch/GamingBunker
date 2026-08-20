@@ -3,6 +3,7 @@ const {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
+    UserSelectMenuBuilder,
     ChannelType,
     PermissionsBitField
 } = require('discord.js');
@@ -24,6 +25,7 @@ function generateTicketId() {
     let ticketId;
 
     do {
+
         ticketId = Math.floor(
             10000 + Math.random() * 90000
         ).toString();
@@ -36,7 +38,7 @@ function generateTicketId() {
 }
 
 // ======================================================
-// TICKET-PANEL
+// TICKET PANEL
 // ======================================================
 
 function createTicketPanel() {
@@ -71,7 +73,7 @@ function createTicketPanel() {
             iconURL: assets.GAMINGBUNKER_LOGO
         });
 
-    const button = new ActionRowBuilder()
+    const row = new ActionRowBuilder()
         .addComponents(
 
             new ButtonBuilder()
@@ -84,12 +86,12 @@ function createTicketPanel() {
 
     return {
         embeds: [embed],
-        components: [button]
+        components: [row]
     };
 }
 
 // ======================================================
-// TICKET-PANEL IM TICKET
+// TICKET EMBED
 // ======================================================
 
 function createTicketEmbed(ticketId, member) {
@@ -130,7 +132,7 @@ function createTicketEmbed(ticketId, member) {
 }
 
 // ======================================================
-// TICKET-BUTTONS
+// TICKET BUTTONS
 // ======================================================
 
 function createTicketButtons() {
@@ -159,142 +161,196 @@ function createTicketButtons() {
 
 async function createTicket(interaction) {
 
-    const guild = interaction.guild;
-    const member = interaction.member;
+    try {
 
-    // Prüfen, ob User bereits Ticket hat
-    const existingTicket = [...openTickets.values()]
-        .find(ticket => ticket.userId === member.id);
+        const guild = interaction.guild;
+        const member = interaction.member;
 
-    if (existingTicket) {
+        // Prüfen, ob bereits ein Ticket existiert
+        const existingTicket = [...openTickets.values()]
+            .find(ticket => ticket.userId === member.id);
 
-        return interaction.reply({
-            content:
-                `❌ Du hast bereits ein offenes Ticket: <#${existingTicket.channelId}>`,
-            ephemeral: true
-        });
-    }
+        if (existingTicket) {
 
-    const ticketId = generateTicketId();
-
-    // Channel erstellen
-    const ticketChannel = await guild.channels.create({
-
-        name: `🎫・ticket-${member.user.username}`,
-
-        type: ChannelType.GuildText,
-
-        parent: TICKET_CATEGORY_ID,
-
-        permissionOverwrites: [
-
-            {
-                id: guild.roles.everyone.id,
-
-                deny: [
-                    PermissionsBitField.Flags.ViewChannel
-                ]
-            },
-
-            {
-                id: member.id,
-
-                allow: [
-                    PermissionsBitField.Flags.ViewChannel,
-                    PermissionsBitField.Flags.SendMessages,
-                    PermissionsBitField.Flags.ReadMessageHistory
-                ]
-            }
-
-        ]
-
-    });
-
-    // Ticket speichern
-    openTickets.set(ticketId, {
-
-        ticketId,
-        channelId: ticketChannel.id,
-        userId: member.id,
-        createdAt: Date.now()
-
-    });
-
-    // Ticket Embed senden
-    await ticketChannel.send({
-
-        content: `${member}`,
-
-        embeds: [
-            createTicketEmbed(
-                ticketId,
-                member
-            )
-        ],
-
-        components: [
-            createTicketButtons()
-        ]
-
-    });
-
-    // ==================================================
-    // TICKET-LOG
-    // ==================================================
-
-    const logChannel = await guild.channels.fetch(
-        channels.TICKET_LOG
-    );
-
-    if (logChannel) {
-
-        const logEmbed = new EmbedBuilder()
-
-            .setTitle('🎫 TICKET ERSTELLT')
-
-            .setColor(0x57F287)
-
-            .setDescription(
-                `👤 **User**\n${member}\n\n` +
-
-                `🆔 **Ticket ID**\n\`${ticketId}\`\n\n` +
-
-                `📁 **Ticket**\n<#${ticketChannel.id}>\n\n` +
-
-                `🕐 **Erstellt**\n` +
-                `<t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
-
-                `📌 **Status**\n🟢 Offen`
-            )
-
-            .setFooter({
-                text: 'GamingBunker Ticket-System',
-                iconURL: assets.GAMINGBUNKER_LOGO
+            return interaction.reply({
+                content:
+                    `❌ Du hast bereits ein offenes Ticket: <#${existingTicket.channelId}>`,
+                ephemeral: true
             });
 
-        const logMessage = await logChannel.send({
-            embeds: [logEmbed]
+        }
+
+        const ticketId = generateTicketId();
+
+        // ==================================================
+        // TICKET CHANNEL ERSTELLEN
+        // ==================================================
+
+        const ticketChannel = await guild.channels.create({
+
+            name: `🎫・ticket-${member.user.username}`,
+
+            type: ChannelType.GuildText,
+
+            parent: TICKET_CATEGORY_ID,
+
+            permissionOverwrites: [
+
+                {
+                    id: guild.roles.everyone.id,
+
+                    deny: [
+                        PermissionsBitField.Flags.ViewChannel
+                    ]
+                },
+
+                {
+                    id: member.id,
+
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,
+                        PermissionsBitField.Flags.SendMessages,
+                        PermissionsBitField.Flags.ReadMessageHistory
+                    ]
+                }
+
+            ]
+
         });
 
-        openTickets.get(ticketId).logMessageId =
-            logMessage.id;
-    }
+        // ==================================================
+        // TICKET SPEICHERN
+        // ==================================================
 
-    // Antwort
-    await interaction.reply({
-        content:
-            `🎫 Dein Ticket wurde erstellt: <#${ticketChannel.id}>\n` +
-            `🆔 Ticket-ID: \`${ticketId}\``,
-        ephemeral: true
-    });
+        openTickets.set(ticketId, {
+
+            ticketId,
+            channelId: ticketChannel.id,
+            userId: member.id,
+            createdAt: Date.now()
+
+        });
+
+        // ==================================================
+        // TICKET PANEL SENDEN
+        // ==================================================
+
+        await ticketChannel.send({
+
+            content: `${member}`,
+
+            embeds: [
+                createTicketEmbed(
+                    ticketId,
+                    member
+                )
+            ],
+
+            components: [
+                createTicketButtons()
+            ]
+
+        });
+
+        // ==================================================
+        // TICKET LOG
+        // ==================================================
+
+        const logChannel = await guild.channels.fetch(
+            channels.TICKET_LOG
+        );
+
+        if (logChannel) {
+
+            const logEmbed = new EmbedBuilder()
+
+                .setAuthor({
+                    name: 'Gaming Bunker',
+                    iconURL: assets.GAMINGBUNKER_LOGO
+                })
+
+                .setThumbnail(
+                    assets.GAMINGBUNKER_LOGO
+                )
+
+                .setTitle('🎫 TICKET ERSTELLT')
+
+                .setColor(0x6F42C1)
+
+                .setDescription(
+                    `👤 **User**\n` +
+                    `${member}\n\n` +
+
+                    `🆔 **Ticket ID**\n` +
+                    `\`${ticketId}\`\n\n` +
+
+                    `📁 **Ticket**\n` +
+                    `<#${ticketChannel.id}>\n\n` +
+
+                    `🕐 **Erstellt**\n` +
+                    `<t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+
+                    `📌 **Status**\n` +
+                    `🟢 Offen`
+                )
+
+                .setImage(
+                    assets.GAMINGBUNKER_BANNER
+                )
+
+                .setFooter({
+                    text: 'Hostet by 𝓘𝓽𝓼 𝓢𝓽𝓪𝓷𝔃𝔂 ♕',
+                    iconURL: assets.GAMINGBUNKER_LOGO
+                });
+
+            const logMessage = await logChannel.send({
+                embeds: [logEmbed]
+            });
+
+            openTickets.get(ticketId).logMessageId =
+                logMessage.id;
+        }
+
+        // ==================================================
+        // ANTWORT
+        // ==================================================
+
+        await interaction.reply({
+
+            content:
+                `🎫 Dein Ticket wurde erstellt: <#${ticketChannel.id}>\n` +
+                `🆔 Ticket-ID: \`${ticketId}\``,
+
+            ephemeral: true
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            '❌ Fehler beim Erstellen des Tickets:',
+            error
+        );
+
+        if (!interaction.replied && !interaction.deferred) {
+
+            await interaction.reply({
+                content:
+                    '❌ Beim Erstellen des Tickets ist ein Fehler aufgetreten.',
+                ephemeral: true
+            });
+
+        }
+
+    }
 
 }
 
 // ======================================================
-// TICKET SCHLIESSEN
+// USER AUSWAHL ÖFFNEN
 // ======================================================
 
-async function closeTicket(interaction) {
+async function openUserSelector(interaction) {
 
     const ticket = [...openTickets.values()]
         .find(
@@ -305,33 +361,188 @@ async function closeTicket(interaction) {
     if (!ticket) {
 
         return interaction.reply({
-            content: '❌ Dieses Ticket wurde nicht gefunden.',
+            content:
+                '❌ Dieses Ticket wurde nicht gefunden.',
             ephemeral: true
         });
 
     }
 
-    const logChannel = await interaction.guild.channels.fetch(
-        channels.TICKET_LOG
+    const select = new UserSelectMenuBuilder()
+
+        .setCustomId(
+            `ticket_select_user_${ticket.ticketId}`
+        )
+
+        .setPlaceholder(
+            '👤 User auswählen'
+        )
+
+        .setMinValues(1)
+
+        .setMaxValues(1);
+
+    const row = new ActionRowBuilder()
+        .addComponents(select);
+
+    await interaction.reply({
+
+        content:
+            '👤 **User hinzufügen**\n\n' +
+            'Wähle den User aus, der Zugriff auf dieses Ticket bekommen soll.',
+
+        components: [row],
+
+        ephemeral: true
+
+    });
+
+}
+
+// ======================================================
+// USER HINZUFÜGEN
+// ======================================================
+
+async function addUserToTicket(interaction) {
+
+    const ticketId =
+        interaction.customId.replace(
+            'ticket_select_user_',
+            ''
+        );
+
+    const ticket = openTickets.get(ticketId);
+
+    if (!ticket) {
+
+        return interaction.update({
+            content:
+                '❌ Dieses Ticket ist nicht mehr geöffnet.',
+            components: []
+        });
+
+    }
+
+    const userId = interaction.values[0];
+
+    // Nicht den Ticket-Ersteller erneut hinzufügen
+    if (userId === ticket.userId) {
+
+        return interaction.update({
+            content:
+                '❌ Dieser User hat bereits Zugriff auf das Ticket.',
+            components: []
+        });
+
+    }
+
+    const member =
+        await interaction.guild.members
+            .fetch(userId);
+
+    if (!member) {
+
+        return interaction.update({
+            content:
+                '❌ User konnte nicht gefunden werden.',
+            components: []
+        });
+
+    }
+
+    // ==================================================
+    // USER BERECHTIGEN
+    // ==================================================
+
+    await interaction.channel.permissionOverwrites.edit(
+        userId,
+        {
+
+            ViewChannel: true,
+            SendMessages: true,
+            ReadMessageHistory: true
+
+        }
     );
 
-    // Log aktualisieren
-    if (logChannel && ticket.logMessageId) {
+    await interaction.update({
 
-        const logMessage =
-            await logChannel.messages.fetch(
-                ticket.logMessageId
+        content:
+            `✅ ${member} wurde zum Ticket hinzugefügt.`,
+
+        components: []
+
+    });
+
+    // Nachricht im Ticket
+    await interaction.channel.send({
+
+        content:
+            `👤 ${member} wurde von ${interaction.user} zum Ticket hinzugefügt.`
+
+    });
+
+}
+
+// ======================================================
+// TICKET SCHLIESSEN
+// ======================================================
+
+async function closeTicket(interaction) {
+
+    try {
+
+        const ticket = [...openTickets.values()]
+            .find(
+                ticket =>
+                    ticket.channelId === interaction.channel.id
             );
 
-        const oldEmbed =
-            logMessage.embeds[0];
+        if (!ticket) {
 
-        const updatedEmbed =
-            EmbedBuilder.from(oldEmbed)
+            return interaction.reply({
+                content:
+                    '❌ Dieses Ticket wurde nicht gefunden.',
+                ephemeral: true
+            });
+
+        }
+
+        // ==================================================
+        // LOG CHANNEL
+        // ==================================================
+
+        const logChannel =
+            await interaction.guild.channels.fetch(
+                channels.TICKET_LOG
+            );
+
+        if (logChannel && ticket.logMessageId) {
+
+            const logMessage =
+                await logChannel.messages.fetch(
+                    ticket.logMessageId
+                );
+
+            const updatedEmbed = new EmbedBuilder()
+
+                .setAuthor({
+                    name: 'Gaming Bunker',
+                    iconURL: assets.GAMINGBUNKER_LOGO
+                })
+
+                .setThumbnail(
+                    assets.GAMINGBUNKER_LOGO
+                )
+
+                .setTitle(
+                    `🎫 TICKET #${ticket.ticketId}`
+                )
 
                 .setColor(0xED4245)
 
                 .setDescription(
+
                     `👤 **User**\n` +
                     `<@${ticket.userId}>\n\n` +
 
@@ -352,40 +563,100 @@ async function closeTicket(interaction) {
 
                     `📌 **Status**\n` +
                     `🔴 Geschlossen`
-                );
 
-        await logMessage.edit({
-            embeds: [updatedEmbed]
-        });
-    }
+                )
 
-    await interaction.reply({
-        content:
-            '🔒 Dieses Ticket wird in 10 Sekunden geschlossen.',
-        ephemeral: false
-    });
+                .setImage(
+                    assets.GAMINGBUNKER_BANNER
+                )
 
-    setTimeout(async () => {
+                .setFooter({
 
-        openTickets.delete(ticket.ticketId);
+                    text:
+                        'Hostet by 𝓘𝓽𝓼 𝓢𝓽𝓪𝓷𝔃𝔂 ♕',
 
-        try {
-            await interaction.channel.delete(
-                'Ticket geschlossen'
-            );
-        } catch (error) {
-            console.error(
-                '❌ Ticket konnte nicht gelöscht werden:',
-                error
-            );
+                    iconURL:
+                        assets.GAMINGBUNKER_LOGO
+
+                });
+
+            await logMessage.edit({
+
+                embeds: [
+                    updatedEmbed
+                ]
+
+            });
+
         }
 
-    }, 10000);
+        // ==================================================
+        // TICKET SCHLIESSEN
+        // ==================================================
+
+        await interaction.reply({
+
+            content:
+                '🔒 Dieses Ticket wird in **10 Sekunden** geschlossen.',
+
+        });
+
+        setTimeout(async () => {
+
+            openTickets.delete(
+                ticket.ticketId
+            );
+
+            usedTicketIds.delete(
+                ticket.ticketId
+            );
+
+            try {
+
+                await interaction.channel.delete(
+                    'Ticket geschlossen'
+                );
+
+            } catch (error) {
+
+                console.error(
+                    '❌ Ticket konnte nicht gelöscht werden:',
+                    error
+                );
+
+            }
+
+        }, 10000);
+
+    } catch (error) {
+
+        console.error(
+            '❌ Fehler beim Schließen des Tickets:',
+            error
+        );
+
+        if (
+            !interaction.replied &&
+            !interaction.deferred
+        ) {
+
+            await interaction.reply({
+
+                content:
+                    '❌ Beim Schließen des Tickets ist ein Fehler aufgetreten.',
+
+                ephemeral: true
+
+            });
+
+        }
+
+    }
 
 }
 
 // ======================================================
-// PANEL STARTEN
+// START
 // ======================================================
 
 module.exports = (client) => {
@@ -400,10 +671,13 @@ module.exports = (client) => {
                 );
 
             if (!channel) {
+
                 console.error(
                     '❌ Ticket-Channel nicht gefunden!'
                 );
+
                 return;
+
             }
 
             const messages =
@@ -413,18 +687,26 @@ module.exports = (client) => {
 
             const existingPanel =
                 messages.find(
+
                     message =>
+
                         message.author.id === client.user.id &&
+
                         message.embeds.length > 0 &&
+
                         message.embeds[0].title ===
                             '🎫 GAMINGBUNKER SUPPORT'
+
                 );
 
-            const panel = createTicketPanel();
+            const panel =
+                createTicketPanel();
 
             if (existingPanel) {
 
-                await existingPanel.edit(panel);
+                await existingPanel.edit(
+                    panel
+                );
 
                 console.log(
                     '♻️ Ticket-Panel aktualisiert.'
@@ -432,7 +714,9 @@ module.exports = (client) => {
 
             } else {
 
-                await channel.send(panel);
+                await channel.send(
+                    panel
+                );
 
                 console.log(
                     '✅ Ticket-Panel erstellt.'
@@ -443,7 +727,7 @@ module.exports = (client) => {
         } catch (error) {
 
             console.error(
-                '❌ Fehler beim Ticket-System:',
+                '❌ Fehler beim Ticket-Panel:',
                 error
             );
 
@@ -452,23 +736,72 @@ module.exports = (client) => {
     });
 
     // ==================================================
-    // BUTTONS
+    // INTERACTIONS
     // ==================================================
 
-    client.on('interactionCreate', async interaction => {
+    client.on(
+        'interactionCreate',
+        async interaction => {
 
-        if (!interaction.isButton()) return;
+            if (!interaction.isButton() &&
+                !interaction.isUserSelectMenu()) {
+                return;
+            }
 
-        if (interaction.customId === 'ticket_create') {
+            // Ticket erstellen
+            if (
+                interaction.isButton() &&
+                interaction.customId === 'ticket_create'
+            ) {
 
-            await createTicket(interaction);
+                await createTicket(
+                    interaction
+                );
+
+                return;
+            }
+
+            // User hinzufügen
+            if (
+                interaction.isButton() &&
+                interaction.customId === 'ticket_add_user'
+            ) {
+
+                await openUserSelector(
+                    interaction
+                );
+
+                return;
+            }
+
+            // User ausgewählt
+            if (
+                interaction.isUserSelectMenu() &&
+                interaction.customId.startsWith(
+                    'ticket_select_user_'
+                )
+            ) {
+
+                await addUserToTicket(
+                    interaction
+                );
+
+                return;
+            }
+
+            // Ticket schließen
+            if (
+                interaction.isButton() &&
+                interaction.customId === 'ticket_close'
+            ) {
+
+                await closeTicket(
+                    interaction
+                );
+
+            }
+
         }
-
-        if (interaction.customId === 'ticket_close') {
-
-            await closeTicket(interaction);
-        }
-
-    });
+    );
 
 };
